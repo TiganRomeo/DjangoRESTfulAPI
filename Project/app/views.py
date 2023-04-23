@@ -1,41 +1,42 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics
-from django.contrib.auth import authenticate
-from django.core.exceptions import ObjectDoesNotExist
-from django.http import Http404
-from .models import User
-from .serializers import UserSerializer, AuthSerializer
+from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.contrib.auth.models import User
 
-class AuthAPIView(APIView):
-    serializer_class = AuthSerializer
+from .serializers import UserSerializer
+
+
+class AuthAPIView(generics.GenericAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid():
-            email = serializer.validated_data['email']
-            password = serializer.validated_data['password']
-            user = authenticate(email=email, password=password)
-            if user:
-                token, created = Token.objects.get_or_create(user=user)
-                return Response({'token': token.key}, status=status.HTTP_200_OK)
-            else:
-                return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = User.objects.filter(username=username).first()
+        if user is None:
+            return Response({'error': 'Invalid Credentials'})
+        if not user.check_password(password):
+            return Response({'error': 'Invalid Credentials'})
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key})
+
 
 class UserAddAPIView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
 
 class UserListAPIView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
 
 class UserEditAPIView(generics.RetrieveUpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'id'
