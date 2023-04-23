@@ -10,12 +10,10 @@ def auth(request):
     return Response(status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-def add_user(request):
-    serializer = UserSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class UserListAPIView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+    pagination_class = LimitOffsetPagination
 
 @api_view(['GET'])
 def list_users(request):
