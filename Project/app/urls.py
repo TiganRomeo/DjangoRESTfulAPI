@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import AuthAPIView, UserAddAPIView, UserListAPIView, UserEditAPIView
+from rest_framework.urlpatterns import format_suffix_patterns
+from .views import AuthAPI, UserAddAPI, UserListAPI, UserEditAPI
 
-urlpatterns = [
-    path('auth/', AuthAPIView.as_view(), name='auth'),
-    path('user/add/', UserAddAPIView.as_view(), name='user-add'),
-    path('user/list/', UserListAPIView.as_view(), name='user-list'),
-    path('user/edit/<int:pk>/', UserEditAPIView.as_view(), name='user-edit'),
-]
+urlpatterns = format_suffix_patterns([
+    path('auth/', AuthAPI.as_view()),
+    path('user/add/', UserAddAPI.as_view()),
+    path('user/list/', UserListAPI.as_view()),
+    path('user/edit/<int:pk>/', UserEditAPI.as_view()),
+])
