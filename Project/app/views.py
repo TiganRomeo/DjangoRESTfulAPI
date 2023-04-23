@@ -1,55 +1,32 @@
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
-from rest_framework import generics
-from .serializers import UserSerializer, validate_not_empty
+from .serializers import UserSerializer
 
-
-class UserCreateAPIView(generics.CreateAPIView):
-    """
-    API view to create a new user.
-    """
+class UserAddAPIView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
-    def perform_create(self, serializer):
-        """
-        Override perform_create method to hash the password before saving it to the database.
-        """
-        password = serializer.validated_data.get('password', None)
-        if password is not None:
-            serializer.validated_data['password'] = make_password(password)
-        serializer.save()
-
-    def post(self, request, *args, **kwargs):
-        """
-        Override post method to validate the data before creating the user.
-        """
-        data = request.data.copy()
-        validate_not_empty(data.get('username', ''))
-        validate_not_empty(data.get('email', ''))
-        validate_not_empty(data.get('password', ''))
-        return super().post(request, *args, **kwargs)
-
+    permission_classes = [permissions.IsAuthenticated]
 
 class UserListAPIView(generics.ListAPIView):
-    """
-    API view to list all users.
-    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-
-class UserUpdateAPIView(generics.UpdateAPIView):
-    """
-    API view to update a user.
-    """
+class UserEdtAPIView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'id'
 
-    def perform_update(self, serializer):
-        """
-        Override perform_update method to hash the password before saving it to the database.
-        """
-        password = serializer.validated_data.get('password', None)
-        if password is not None:
-            serializer.validated_data['password'] = make_password(password)
-        serializer.save()
+class AuthAPIView(generics.GenericAPIView):
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user:
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
