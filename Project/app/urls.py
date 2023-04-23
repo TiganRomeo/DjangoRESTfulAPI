@@ -1,10 +1,13 @@
 from django.urls import path
-from rest_framework.urlpatterns import format_suffix_patterns
-from .views import AuthAPI, UserAddAPI, UserListAPI, UserEditAPI
+from rest_framework.authtoken.views import obtain_auth_token
 
-urlpatterns = format_suffix_patterns([
+from .views import AuthAPI, UserList, UserDetail
+
+
+urlpatterns = [
     path('auth/', AuthAPI.as_view()),
-    path('user/add/', UserAddAPI.as_view()),
-    path('user/list/', UserListAPI.as_view()),
-    path('user/edit/<int:pk>/', UserEditAPI.as_view()),
-])
+    path('user/add/', UserList.as_view()),
+    path('user/list/', UserList.as_view()),
+    path('user/edit/<int:pk>/', UserDetail.as_view()),
+    path('api-token-auth/', obtain_auth_token, name='api_token_auth'), # For obtaining token through browsable API
+]

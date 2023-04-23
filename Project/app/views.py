@@ -1,82 +1,87 @@
-from django.contrib.auth import authenticate, login
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
 from .models import User
+from .serializers import UserSerializer
 
 
-@csrf_exempt
-def AuthAPI(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+class AuthAPI(APIView):
+    """
+    API for user authentication
+    """
+    def post(self, request, format=None):
+        """
+        Authenticate user credentials and return a token
+        """
+        username = request.data.get("username")
+        password = request.data.get("password")
         user = authenticate(username=username, password=password)
         if user is not None:
-            login(request, user)
-            return JsonResponse({'status': 'success'})
+            return Response({"token": user.auth_token.key})
         else:
-            return JsonResponse({'error': 'Invalid Credentials'}, status=401)
-    else:
-        return JsonResponse({'error': 'Method "GET" not allowed.'}, status=405)
+            return Response({"error": "Invalid Credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-@csrf_exempt
-def UserAddAPI(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        staff_status = request.POST.get('staff_status')
-        if staff_status == 'true':
-            staff_status = True
-        elif staff_status == 'false':
-            staff_status = False
+class UserList(APIView):
+    """
+    API to get list of users or create a new user
+    """
+    def get(self, request, format=None):
+        """
+        Get list of users
+        """
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, format=None):
+        """
+        Create a new user
+        """
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         else:
-            return JsonResponse({'error': 'Invalid staff status value'}, status=400)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserDetail(APIView):
+    """
+    API to get, update or delete a specific user
+    """
+    def get_object(self, pk):
         try:
-            User.objects.create_user(username=username, email=email, password='password', first_name=first_name,
-                                     last_name=last_name, is_staff=staff_status)
-            return JsonResponse({'status': 'success'})
-        except:
-            return JsonResponse({'error': 'Failed to add user'}, status=500)
-    else:
-        return JsonResponse({'error': 'Method "GET" not allowed.'}, status=405)
-
-
-@csrf_exempt
-def UserListAPI(request):
-    if request.method == 'GET':
-        users = User.objects.all().values()
-        return JsonResponse({'users': list(users)})
-    else:
-        return JsonResponse({'error': 'Method "POST" not allowed.'}, status=405)
-
-
-@csrf_exempt
-def UserEditAPI(request):
-    if request.method == 'POST':
-        user_id = request.POST.get('user_id')
-        email = request.POST.get('email')
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        staff_status = request.POST.get('staff_status')
-        if staff_status == 'true':
-            staff_status = True
-        elif staff_status == 'false':
-            staff_status = False
-        else:
-            return JsonResponse({'error': 'Invalid staff status value'}, status=400)
-        try:
-            user = User.objects.get(id=user_id)
-            user.email = email
-            user.first_name = first_name
-            user.last_name = last_name
-            user.is_staff = staff_status
-            user.save()
-            return JsonResponse({'status': 'success'})
+            return User.objects.get(pk=pk)
         except User.DoesNotExist:
-            return JsonResponse({'error': 'User not found'}, status=404)
-        except:
-            return JsonResponse({'error': 'Failed to edit user'}, status=500)
-    else:
-        return JsonResponse({'error': 'Method "GET" not allowed.'}, status=405)
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        """
+        Get a specific user
+        """
+        user = self.get_object(pk)
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
+    def put(self, request, pk, format=None):
+        """
+        Update a specific user
+        """
+        user = self.get_object(pk)
+        serializer = UserSerializer(user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk, format=None):
+        """
+        Delete a specific user
+        """
+        user = self.get_object(pk)
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
