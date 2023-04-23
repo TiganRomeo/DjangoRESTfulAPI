@@ -21,6 +21,9 @@ class UserEdtAPIView(generics.UpdateAPIView):
     lookup_field = 'id'
 
 class AuthAPIView(generics.GenericAPIView):
+    def get_serializer_class(self):
+        return None
+
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
