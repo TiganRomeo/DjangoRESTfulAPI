@@ -1,9 +1,9 @@
 from django.urls import path
-from app.views import auth, add_user, list_users, edit_user
+from app import views
 
 urlpatterns = [
-    path('auth/', auth.as_view(), name='auth'),
-    path('user/add/', add_user.as_view(), name='user-add'),
-    path('user/list/', list_users.as_view(), name='user-list'),
-    path('user/edt/<int:pk>/', edit_user.as_view(), name='user-edt'),
+    path('auth/', views.auth, name='auth'),
+    path('user/add/', views.add_user, name='user-add'),
+    path('user/list/', views.list_users, name='user-list'),
+    path('user/edt/<int:pk>/', views.edit_user, name='user-edt'),
 ]
