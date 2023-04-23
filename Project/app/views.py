@@ -1,87 +1,70 @@
 from django.contrib.auth import authenticate
-from rest_framework.views import APIView
+from rest_framework import generics, status, viewsets
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import status
 
 from .models import User
 from .serializers import UserSerializer
 
-
-class AuthAPI(APIView):
-    """
-    API for user authentication
-    """
-    def post(self, request, format=None):
-        """
-        Authenticate user credentials and return a token
-        """
-        username = request.data.get("username")
-        password = request.data.get("password")
-        user = authenticate(username=username, password=password)
+class AuthAPI(generics.GenericAPIView):
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username', None)
+        password = request.data.get('password', None)
+        user = authenticate(request, username=username, password=password)
         if user is not None:
-            return Response({"token": user.auth_token.key})
+            return Response({
+                'status': True,
+                'message': 'Successfully authenticated',
+                'user_id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'is_staff': user.is_staff
+            })
         else:
-            return Response({"error": "Invalid Credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                'status': False,
+                'message': 'Invalid Credentials'
+            })
 
+class UserAPI(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = (IsAuthenticated,)
 
-class UserList(APIView):
-    """
-    API to get list of users or create a new user
-    """
-    def get(self, request, format=None):
-        """
-        Get list of users
-        """
-        users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
+    def list(self, request, *args, **kwargs):
+        queryset = User.objects.all()
+        serializer = UserSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    def post(self, request, format=None):
-        """
-        Create a new user
-        """
+    def create(self, request, *args, **kwargs):
         serializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+            'status': True,
+            'message': 'User created successfully',
+            'user_id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'is_staff': user.is_staff
+        })
 
-
-class UserDetail(APIView):
-    """
-    API to get, update or delete a specific user
-    """
-    def get_object(self, pk):
-        try:
-            return User.objects.get(pk=pk)
-        except User.DoesNotExist:
-            raise Http404
-
-    def get(self, request, pk, format=None):
-        """
-        Get a specific user
-        """
-        user = self.get_object(pk)
-        serializer = UserSerializer(user)
-        return Response(serializer.data)
-
-    def put(self, request, pk, format=None):
-        """
-        Update a specific user
-        """
-        user = self.get_object(pk)
-        serializer = UserSerializer(user, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, pk, format=None):
-        """
-        Delete a specific user
-        """
-        user = self.get_object(pk)
-        user.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = UserSerializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+            'status': True,
+            'message': 'User updated successfully',
+            'user_id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'is_staff': user.is_staff
+        })
