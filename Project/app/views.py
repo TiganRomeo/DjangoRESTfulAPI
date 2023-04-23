@@ -1,32 +1,25 @@
-from django.contrib.auth import authenticate
-from rest_framework import generics, status, viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework.response import Response
-
-from .models import User
+from rest_framework import status, viewsets
+from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
 from .serializers import UserSerializer
 
-class AuthAPI(generics.GenericAPIView):
-    def post(self, request, *args, **kwargs):
-        username = request.data.get('username', None)
-        password = request.data.get('password', None)
+class AuthAPI(APIView):
+    serializer_class = UserSerializer
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
         user = authenticate(request, username=username, password=password)
-        if user is not None:
-            return Response({
-                'status': True,
-                'message': 'Successfully authenticated',
-                'user_id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'is_staff': user.is_staff
-            })
+        if user:
+            login(request, user)
+            serializer = self.serializer_class(user)
+            return Response(serializer.data)
         else:
-            return Response({
-                'status': False,
-                'message': 'Invalid Credentials'
-            })
+            return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 class UserAPI(viewsets.ModelViewSet):
     queryset = User.objects.all()
