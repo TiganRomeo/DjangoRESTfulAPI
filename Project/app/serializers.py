@@ -1,43 +1,12 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
+from .models import CustomUser
 
-
-def validate_not_empty(value):
-    """
-    Custom validator to ensure that a string field is not empty.
-    """
-    if not value.strip():
-        raise serializers.ValidationError("This field cannot be empty.")
-
-
-class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializer class for User model.
-    """
+class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = ('id', 'username', 'email', 'password')
+        model = CustomUser
+        fields = ('username', 'email', 'first_name', 'last_name', 'password')
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
-        """
-        Override create method to hash the password before saving it to the database.
-        """
-        user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password']
-        )
+        user = CustomUser.objects.create_user(**validated_data)
         return user
-
-    def update(self, instance, validated_data):
-        """
-        Override update method to hash the password before saving it to the database.
-        """
-        instance.username = validated_data.get('username', instance.username)
-        instance.email = validated_data.get('email', instance.email)
-        password = validated_data.get('password', None)
-        if password is not None:
-            instance.set_password(password)
-        instance.save()
-        return instance
