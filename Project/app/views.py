@@ -1,63 +1,35 @@
-from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status, viewsets
-from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.models import User
-from django.contrib.auth import authenticate, login
-from .serializers import UserSerializer
+from .models import User
 
-class AuthAPI(APIView):
-    serializer_class = UserSerializer
+@api_view(['POST'])
+def auth(request):
+    # Your authentication code here
+    return Response('Authenticated')
 
-    def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
+@api_view(['POST'])
+def add_user(request):
+    name = request.data.get('name')
+    email = request.data.get('email')
+    password = request.data.get('password')
+    user = User(name=name, email=email, password=password)
+    user.save()
+    return Response('User added successfully')
 
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
-            serializer = self.serializer_class(user)
-            return Response(serializer.data)
-        else:
-            return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+@api_view(['GET'])
+def list_users(request):
+    users = User.objects.all()
+    data = [{'name': user.name, 'email': user.email} for user in users]
+    return Response(data)
 
-class UserAPI(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = (IsAuthenticated,)
-
-    def list(self, request, *args, **kwargs):
-        queryset = User.objects.all()
-        serializer = UserSerializer(queryset, many=True)
-        return Response(serializer.data)
-
-    def create(self, request, *args, **kwargs):
-        serializer = UserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response({
-            'status': True,
-            'message': 'User created successfully',
-            'user_id': user.id,
-            'username': user.username,
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'is_staff': user.is_staff
-        })
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = UserSerializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response({
-            'status': True,
-            'message': 'User updated successfully',
-            'user_id': user.id,
-            'username': user.username,
-            'email': user.email,
-            'first_name': user.first_name,
-            'last_name': user.last_name,
-            'is_staff': user.is_staff
-        })
+@api_view(['PUT'])
+def edit_user(request, id):
+    user = User.objects.get(id=id)
+    name = request.data.get('name')
+    email = request.data.get('email')
+    password = request.data.get('password')
+    user.name = name
+    user.email = email
+    user.password = password
+    user.save()
+    return Response('User updated successfully')
