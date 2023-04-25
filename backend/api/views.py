@@ -29,10 +29,12 @@ class UserAddView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
+            id = request.data.get('id')
+            if User.objects.filter(id=id).exists():
+                return Response({'message': 'User with this ID already exists'}, status=status.HTTP_400_BAD_REQUEST)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserListView(APIView):
     permission_classes = [IsAuthenticated]
@@ -55,9 +57,9 @@ class UserEditView(APIView):
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
-    def put(self, request, id):
+    def put(self, request, pk):
         try:
-            user = User.objects.get(pk=id)
+            user = User.objects.get(id=pk)
         except User.DoesNotExist:
             return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -67,11 +69,11 @@ class UserEditView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, id):
+    def delete(self, request, pk):
         try:
-            user = User.objects.get(pk=id)
+            user = User.objects.get(id=pk)
         except User.DoesNotExist:
-            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
+            return Response({'message': 'The user does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
