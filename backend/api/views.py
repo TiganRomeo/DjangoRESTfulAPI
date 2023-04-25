@@ -50,19 +50,17 @@ class UserListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserEditView(APIView):
-    def get_object(self, id):
-        try:
-            return User.objects.get(id=id)
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-    def get(self, request, id):
-        user = self.get_object(id)
+    def get(self, request, pk):
+        user = User.objects.get(id=pk)
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
     def put(self, request, id):
-        user = self.get_object(id)
+        try:
+            user = User.objects.get(pk=id)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
         serializer = UserSerializer(user, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -70,6 +68,10 @@ class UserEditView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, id):
-        user = self.get_object(id)
+        try:
+            user = User.objects.get(pk=id)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
         user.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
