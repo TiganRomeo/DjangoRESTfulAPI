@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\Romeo Paul\OneDrive\Documents\GitHub\RESTful API - Django\venv"
+VIRTUAL_ENV="C:\Users\Romeo Paul\OneDrive\Documents\RESTful Django\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

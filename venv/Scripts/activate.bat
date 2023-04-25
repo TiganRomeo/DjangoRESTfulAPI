@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\Romeo Paul\OneDrive\Documents\GitHub\RESTful API - Django\venv
+set VIRTUAL_ENV=C:\Users\Romeo Paul\OneDrive\Documents\RESTful Django\venv
 
 if not defined PROMPT set PROMPT=$P$G
 
