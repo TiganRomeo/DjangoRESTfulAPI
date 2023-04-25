@@ -4,4 +4,5 @@ djangorestframework-simplejwt
 pyyaml
 requests
 django-cors-headers
+django-postgresql
 psycopg2-binary
