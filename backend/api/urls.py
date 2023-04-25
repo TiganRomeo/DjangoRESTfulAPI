@@ -1,6 +1,6 @@
 from django.urls import path
-from . import views
+from .views import AuthView
 
 urlpatterns = [
-    path('', views.api_home), # localhost:8000/api/1.0/
+    path('', AuthView.as_view()), # localhost:8000/api/1.0/
 ]
