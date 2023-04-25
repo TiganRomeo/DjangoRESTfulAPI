@@ -1,6 +1,9 @@
 from django.urls import path
-from .views import AuthView
+from . import views
 
 urlpatterns = [
-    path('', AuthView.as_view()), # localhost:8000/api/1.0/
+    path('auth/', views.auth, name='auth'),
+    path('user/add/', views.user_add, name='user_add'),
+    path('user/list/', views.user_list, name='user_list'),
+    path('user/edit/<int:pk>/', views.user_edit, name='user_edit'),
 ]
