@@ -34,10 +34,20 @@ class UserAddView(APIView):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class UserListView(generics.ListAPIView):
-    permission_classes = (IsAuthenticated,)
-    serializer_class = UserSerializer
-    queryset = User.objects.all()
+class UserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        users = User.objects.all()
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
 class UserEditView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
